@@ -136,8 +136,14 @@ async function loadLatest(): Promise<HotspotData> {
   );
 }
 
+// 새로고침 요청이 와도 10분 안에 받은 자료가 있으면 그대로 쓴다 (호출 한도 보호)
+const MIN_REFRESH_MS = 10 * 60 * 1000;
+
 export async function getSeoulHotspots(force = false) {
-  if (!force && cached && Date.now() - cached.savedAt < CACHE_MS) return cached.data;
+  if (cached) {
+    const age = Date.now() - cached.savedAt;
+    if (age < (force ? MIN_REFRESH_MS : CACHE_MS)) return cached.data;
+  }
 
   if (!pending) {
     pending = loadLatest()
